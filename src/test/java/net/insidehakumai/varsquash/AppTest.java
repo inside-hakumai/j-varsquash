@@ -1,4 +1,4 @@
-package net.insidehakumai.jderanger;
+package net.insidehakumai.varsquash;
 
 import static org.junit.Assert.assertTrue;
 

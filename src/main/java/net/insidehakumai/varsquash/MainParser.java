@@ -1,4 +1,4 @@
-package net.insidehakumai.jderanger;
+package net.insidehakumai.varsquash;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseProblemException;
