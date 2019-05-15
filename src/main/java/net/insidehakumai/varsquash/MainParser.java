@@ -19,6 +19,7 @@ import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
 import org.apache.commons.cli.*;
@@ -93,78 +94,43 @@ public class MainParser {
             System.exit(1);
         }
 
-        cu.findAll(MethodDeclaration.class).stream().forEach(methodDec -> {
-            Map<String, String> variableShorteningMap = HashBiMap.create();
+        cu.findAll(MethodDeclaration.class).forEach(methodDec -> {
+            SquashPatternManager squashPatternManager = new SquashPatternManager();
             // outputASTRecursively(0, methodDec);
             System.out.println(String.format("%s", methodDec.getName()));
 
             // TODO 注目してるメソッドの引数だけでなく，内部で使用しているラムダ式の引数も一緒に取ってくるため，不整合が無いか検証
-            methodDec.findAll(Parameter.class).stream().forEach(param -> {
+            methodDec.findAll(Parameter.class).forEach(param -> {
                 String originalParamName = param.getNameAsString();
-                String shortenedName = String.valueOf(originalParamName.toString().charAt(0));;
-
-                if (!variableShorteningMap.containsKey(originalParamName)) {
-                    int charIndex = 0;
-                    do {
-                        charIndex++;
-                        if (charIndex < originalParamName.length()) {
-                            shortenedName = originalParamName.substring(0, charIndex);
-                        } else {
-                            shortenedName = originalParamName;
-                            for (int i = 0; i <= originalParamName.length() - charIndex; i++) {
-                                shortenedName += "_";
-                            }
-                        }
-                    } while(variableShorteningMap.containsValue(shortenedName));
-                    variableShorteningMap.put(originalParamName, shortenedName);
-                } else {
-                    shortenedName = variableShorteningMap.get(originalParamName);
-                }
-                param.setName(shortenedName);
+                String squashedName = squashPatternManager.getSquashedName(originalParamName);
+                param.setName(squashedName);
             });
 
-            methodDec.findAll(VariableDeclarationExpr.class).stream().forEach(variable -> {
+            methodDec.findAll(VariableDeclarationExpr.class).forEach(variable -> {
                 // System.out.println(String.format("  %s", variable.toString()));
                 List<VariableDeclarator> valDeclarators = getChildNodesByType(variable, VariableDeclarator.class);
                 assert valDeclarators.size() == 1;
                 VariableDeclarator declarator = valDeclarators.get(0);
                 String originalVariableName = declarator.getNameAsString();
-                String shortenedName = String.valueOf(originalVariableName.toString().charAt(0));
+                String squashedName = squashPatternManager.getSquashedName(originalVariableName);
 
-                // TODO 上にほとんど同じ処理があるのでメソッド化してまとめる
-                if (!variableShorteningMap.containsKey(originalVariableName)) {
-                    int charIndex = 0;
-                    do {
-                        charIndex++;
-                        if (charIndex < originalVariableName.length()) {
-                            shortenedName = originalVariableName.substring(0, charIndex);
-                        } else {
-                            shortenedName = originalVariableName;
-                            for (int i = 0; i <= originalVariableName.length() - charIndex; i++) {
-                                shortenedName += "_";
-                            }
-                        }
-                    } while(variableShorteningMap.containsValue(shortenedName));
-                    variableShorteningMap.put(originalVariableName, shortenedName);
-                } else {
-                    shortenedName = variableShorteningMap.get(originalVariableName);
-                }
-                declarator.setName(shortenedName);
+                declarator.setName(squashedName);
             });
 
             methodDec.findAll(NameExpr.class).stream().forEach(nameExpr -> {
                 String name = nameExpr.getNameAsString();
-                if (variableShorteningMap.containsKey(name)) {
-                    nameExpr.setName(variableShorteningMap.get(name));
+                if (squashPatternManager.hasPatternForName(name)) {
+                    nameExpr.setName(squashPatternManager.getSquashedName(name));
                 }
             });
 
             System.out.println();            
             System.out.println(methodDec.toString());
-            System.out.println(variableShorteningMap.toString());
+            System.out.println(squashPatternManager.toString());
         });
 
         try {
+            // TODO Ensure directory existence
             File file = new File(cmd.getOptionValue("outfile"));
             FileWriter fileWriter = new FileWriter(file);
             fileWriter.write(cu.toString());
@@ -247,6 +213,47 @@ public class MainParser {
 
     private static String formatDirName(String dirName){
         return dirName.replace("-", "").replace("_", "");
+    }
+
+}
+
+class SquashPatternManager {
+
+    private BiMap<String, String> patternMap;
+
+    SquashPatternManager() {
+        patternMap = HashBiMap.create();
+    }
+
+    String getSquashedName(String originalName) {
+
+        String squashedName;
+
+        if (!patternMap.containsKey(originalName)) {
+            int charIndex = 0;
+            do {
+                charIndex++;
+                if (charIndex < originalName.length()) {
+                    squashedName = originalName.substring(0, charIndex);
+                } else {
+                    squashedName = originalName + "_".repeat(charIndex - originalName.length());
+                }
+            } while(patternMap.containsValue(squashedName));
+            patternMap.put(originalName, squashedName);
+        } else {
+            squashedName = patternMap.get(originalName);
+        }
+
+        return squashedName;
+    }
+
+    boolean hasPatternForName(String name) {
+        return patternMap.containsKey(name);
+    }
+
+    @Override
+    public String toString() {
+        return patternMap.toString();
     }
 
 }
