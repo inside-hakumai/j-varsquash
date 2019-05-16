@@ -27,53 +27,34 @@ import java.util.stream.Collectors;
 
 
 /**
- * JavaMethodParserのエントリーポイント用クラス
+ * Javaソースコードに含まれる変数名の短縮化を行います。
+ * また，変数の元の名前と短縮化を行った後の名前のマッピングを保持します．
+ * TODO Translate in English
  */
-public class MainParser {
+class NameSquasher {
 
-    public static void main(String[] args) {
-        Options options = new Options();
+    /**
+     * Javaファイルの中で使用されている変数の名前を短縮し，その結果得られるソースコードをファイルに出力する
+     * @param inputFilePath 変数の名前を短縮するJavaファイルのファイルパス
+     * @param outputFilePath 変数の名前を短縮して得られるJavaソースコードの出力先ファイルパス
+     * @throws FileNotFoundException 入力するJavaファイルが存在しなかった場合
+     * TODO Translate in English
+     */
+    void squashNamesInFile(String inputFilePath, String outputFilePath) throws FileNotFoundException {
 
-        Option trainDirOpt = new Option("i", "infile", true, "path of file to be deranged");
-        trainDirOpt.setRequired(true);
-        options.addOption(trainDirOpt);
-
-        Option outputDirOpt = new Option("o", "outfile", true, "path to result file"); // TODO ちゃんと書く
-        outputDirOpt.setRequired(true);
-        options.addOption(outputDirOpt);
-
-        CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
-        CommandLine cmd;
-
-        try {
-            cmd = parser.parse(options, args);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            formatter.printHelp("options", options);
-
-            System.exit(1);
-            return;
-        }
-
-        File inputFile = new File(cmd.getOptionValue("infile"));
+        File inputFile = new File(inputFilePath);
         CompilationUnit cu;
-        try {
-            TypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
-            reflectionTypeSolver.setParent(reflectionTypeSolver);
 
-            CombinedTypeSolver combinedSolver = new CombinedTypeSolver();
-            combinedSolver.add(reflectionTypeSolver);
+        TypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
+        reflectionTypeSolver.setParent(reflectionTypeSolver);
 
-            JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedSolver);
-            JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
+        CombinedTypeSolver combinedSolver = new CombinedTypeSolver();
+        combinedSolver.add(reflectionTypeSolver);
 
-            cu = JavaParser.parse(inputFile);
-        } catch (FileNotFoundException e) {
-            cu = null;
-            System.err.println(String.format("ERROR: No such file: %s", inputFile.getPath()));
-            System.exit(1);
-        }
+        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedSolver);
+        JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
+
+        cu = JavaParser.parse(inputFile);
 
         cu.findAll(MethodDeclaration.class).forEach(methodDec -> {
             SquashPatternManager squashPatternManager = new SquashPatternManager();
@@ -112,7 +93,7 @@ public class MainParser {
 
         try {
             // TODO Ensure directory existence
-            File file = new File(cmd.getOptionValue("outfile"));
+            File file = new File(outputFilePath);
             FileWriter fileWriter = new FileWriter(file);
             fileWriter.write(cu.toString());
             fileWriter.close();
@@ -121,6 +102,14 @@ public class MainParser {
         }
     }
 
+    /**
+     * ソースコードのAST上のあるノードの子ノードの中で，特定の種類のものを抽出します．
+     * @param node 子ノードを検索するノード。つまり，このメソッドが返すノード集合の親ノードとなるもの
+     * @param clazz 抽出するノードの種類を示すクラス
+     * @param <N> com.github.javaparser.ast.Node を継承しているクラス
+     * @return 抽出したノードのリスト。何も見つからなかった場合は空のリストを返す
+     * TODO Translate in English
+     */
     private static <N extends Node> List<N> getChildNodesByType(Node node, Class<N> clazz) {
         List<N> returnNodes = node.getChildNodes().stream()
             .filter(targetChild -> targetChild.getClass() == clazz)
@@ -150,6 +139,10 @@ public class MainParser {
 
 }
 
+/**
+ * 変数の元の名前と短縮化を行った後の名前のマッピングを保持します。
+ * TODO Translate in English
+ */
 class SquashPatternManager {
 
     private BiMap<String, String> patternMap;
@@ -158,6 +151,13 @@ class SquashPatternManager {
         patternMap = HashBiMap.create();
     }
 
+    /**
+     * ある変数名について，その名前の短縮化を行った後の名前を返します。
+     * 短縮化は、既にある名前を競合しないように一意に定まるものを設定します。
+     * @param originalName 短縮化を行う変数名
+     * @return 短縮化を行った後の名前
+     * TODO Translate in English
+     */
     String getSquashedName(String originalName) {
 
         String squashedName;
@@ -180,6 +180,12 @@ class SquashPatternManager {
         return squashedName;
     }
 
+    /**
+     * ある変数名について、その名前に対応する短縮化を行った後の名前をこのクラスのオブジェクトが既に保持しているかどうかを返します
+     * @param name 検索する名前
+     * @return 短縮化を行った後の名前を保持していればTrue、保持していなかったらFalse
+     * TODO Translate in English
+     */
     boolean hasPatternForName(String name) {
         return patternMap.containsKey(name);
     }
