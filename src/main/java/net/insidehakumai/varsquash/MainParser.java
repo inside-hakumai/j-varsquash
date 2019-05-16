@@ -99,7 +99,7 @@ public class MainParser {
                 declarator.setName(squashedName);
             });
 
-            methodDec.findAll(NameExpr.class).stream().forEach(nameExpr -> {
+            methodDec.findAll(NameExpr.class).forEach(nameExpr -> {
                 String name = nameExpr.getNameAsString();
                 if (squashPatternManager.hasPatternForName(name)) {
                     nameExpr.setName(squashPatternManager.getSquashedName(name));
@@ -124,9 +124,7 @@ public class MainParser {
 
     private static <N extends Node> List<N> getChildNodesByType(Node node, Class<N> clazz) {
         List<N> returnNodes = node.getChildNodes().stream()
-        .filter(targetChild -> {
-            return targetChild.getClass() == clazz;
-        })
+        .filter(targetChild -> targetChild.getClass() == clazz)
         .map(n -> (N) n) // TODO unchecked警告を外す安全な方法が無いか調査
         .collect(Collectors.toList());
 
@@ -149,52 +147,6 @@ public class MainParser {
         });
 
 
-    }
-
-
-    /**
-     * ファイルの絶対パスからファイル名のみの文字列を返す
-     * @param fileName ファイルパスを表す文字列
-     * @return ファイル名のみの文字列
-     */
-    private static String getPrefix(String fileName) {
-        if (fileName == null)
-            return null;
-        int point = fileName.lastIndexOf(".");
-        if (point != -1) {
-            fileName = fileName.substring(0, point);
-        }
-        point = fileName.lastIndexOf("/");
-        if (point != -1) {
-            return fileName.substring(point + 1);
-        }
-        return fileName;
-    }
-
-    /**
-     * ディレクトリの内部に含まれるJavaファイルを再帰的に探索する
-     * @param dir 探索対象のディレクトリを表すFileオブジェクト
-     * @return 内部に含まれるJavaファイルを表すFileオブジェクトのArrayList
-     */
-    private static ArrayList<File> getJavaFilesRecursively(File dir) {
-        ArrayList<File> fileList = new ArrayList<>();
-        File[] files = dir.listFiles();
-        if (files == null) return new ArrayList<>();
-
-        for (File file : files) {
-            if (!file.exists()) {
-                continue;
-            } else if (file.isDirectory()) {
-                fileList.addAll(getJavaFilesRecursively(file));
-            } else if (file.isFile() && FilenameUtils.getExtension(file.getAbsolutePath()).equals("java")) {
-                fileList.add(file);
-            }
-        }
-        return fileList;
-    }
-
-    private static String formatDirName(String dirName){
-        return dirName.replace("-", "").replace("_", "");
     }
 
 }
