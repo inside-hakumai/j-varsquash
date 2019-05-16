@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-
 /**
  * JavaMethodParserのエントリーポイント用クラス
  */
@@ -35,7 +34,7 @@ public class MainParser {
     public static void main(String[] args) {
         Options options = new Options();
 
-        Option trainDirOpt = new Option("i", "infile", true, "path of file to be deranged" );
+        Option trainDirOpt = new Option("i", "infile", true, "path of file to be deranged");
         trainDirOpt.setRequired(true);
         options.addOption(trainDirOpt);
 
@@ -62,7 +61,7 @@ public class MainParser {
         try {
             TypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
             reflectionTypeSolver.setParent(reflectionTypeSolver);
-            
+
             CombinedTypeSolver combinedSolver = new CombinedTypeSolver();
             combinedSolver.add(reflectionTypeSolver);
 
@@ -106,7 +105,7 @@ public class MainParser {
                 }
             });
 
-            System.out.println();            
+            System.out.println();
             System.out.println(methodDec.toString());
             System.out.println(squashPatternManager.toString());
         });
@@ -124,9 +123,9 @@ public class MainParser {
 
     private static <N extends Node> List<N> getChildNodesByType(Node node, Class<N> clazz) {
         List<N> returnNodes = node.getChildNodes().stream()
-        .filter(targetChild -> targetChild.getClass() == clazz)
-        .map(n -> (N) n) // TODO unchecked警告を外す安全な方法が無いか調査
-        .collect(Collectors.toList());
+            .filter(targetChild -> targetChild.getClass() == clazz)
+            .map(n -> (N) n) // TODO unchecked警告を外す安全な方法が無いか調査
+            .collect(Collectors.toList());
 
         return returnNodes;
     }
@@ -137,13 +136,13 @@ public class MainParser {
         }
 
         if (node.toString().length() > 50) {
-            System.out.println(String.format("%s, %s",node.getClass(), node.toString().replace("\n", "").replace("\r", "").substring(0, 50)));
+            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "").substring(0, 50)));
         } else {
-            System.out.println(String.format("%s, %s",node.getClass(), node.toString().replace("\n", "").replace("\r", "")));
+            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "")));
         }
 
         node.getChildNodes().forEach(child -> {
-           outputASTRecursively(depth + 1, child); 
+            outputASTRecursively(depth + 1, child);
         });
 
 
@@ -172,7 +171,7 @@ class SquashPatternManager {
                 } else {
                     squashedName = originalName + "_".repeat(charIndex - originalName.length());
                 }
-            } while(patternMap.containsValue(squashedName));
+            } while (patternMap.containsValue(squashedName));
             patternMap.put(originalName, squashedName);
         } else {
             squashedName = patternMap.get(originalName);
