@@ -1,13 +1,13 @@
-package net.insidehakumai.jderanger;
+package net.insidehakumai.varsquash;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 /**
- * Unit test for simple App.
+ * Unit test for simple ComamndLineApp.
  */
-public class AppTest 
+public class ComamndLineAppTest
 {
     /**
      * Rigorous Test :-)
