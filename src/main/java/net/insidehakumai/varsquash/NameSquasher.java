@@ -40,7 +40,7 @@ public class NameSquasher {
      * @throws FileNotFoundException 入力するJavaファイルが存在しなかった場合
      * TODO Translate in English
      */
-    void squashNamesInFile(String inputFilePath, String outputFilePath) throws FileNotFoundException {
+    public void squashNamesInFile(String inputFilePath, String outputFilePath) throws FileNotFoundException {
 
         File inputFile = new File(inputFilePath);
         CompilationUnit cu;
