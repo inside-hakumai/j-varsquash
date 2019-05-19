@@ -7,6 +7,7 @@
   <groupId>net.insidehakumai.varsquash</groupId>
   <artifactId>varsquash</artifactId>
   <version>0.0.1</version>
+  <packaging>jar</packaging>
 
   <name>varsquash</name>
   <url>https://github.com/inside-hakumai/j-varsquash</url>
@@ -16,6 +17,11 @@
     <java.version>11</java.version>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.compiler.source>${java.version}</maven.compiler.source>
+    <github.global.server>github</github.global.server>
+    <git.branchName>mvn-repo</git.branchName>
+    <git.repositoryOwner>inside-hakumai</git.repositoryOwner>
+    <git.repositoryName>j-varsquash</git.repositoryName>
+    <git.isMerge>true</git.isMerge>
   </properties>
 
   <dependencies>
@@ -135,5 +141,44 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>0.12</version>
+        <configuration>
+          <!-- Git コミットメッセージ -->
+          <message>Maven artifacts for ${project.version}</message>
+          <noJekyll>true</noJekyll>
+          <!-- distributionManagement の url と一致させる -->
+          <outputDirectory>${project.build.directory}/${git.branchName}</outputDirectory>
+          <!-- リモートブランチ名 -->
+          <branch>refs/heads/${git.branchName}</branch>
+          <includes>
+            <include>**/*</include>
+          </includes>
+          <!-- Github リポジトリ名 -->
+          <repositoryName>${git.repositoryName}</repositoryName>
+          <!-- Github リポジトリユーザー名 -->
+          <repositoryOwner>${git.repositoryOwner}</repositoryOwner>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
+
+  <distributionManagement>
+    <repository>
+      <id>internal.repo</id>
+      <name>Temporary Staging Repository</name>
+      <url>file://${project.build.directory}/${git.branchName}</url>
+    </repository>
+  </distributionManagement>
 </project>
