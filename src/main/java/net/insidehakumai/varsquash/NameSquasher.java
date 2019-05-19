@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * また，変数の元の名前と短縮化を行った後の名前のマッピングを保持します．
  * TODO Translate in English
  */
-class NameSquasher {
+public class NameSquasher {
 
     /**
      * Javaファイルの中で使用されている変数の名前を短縮し，その結果得られるソースコードをファイルに出力する
