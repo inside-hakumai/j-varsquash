@@ -33,6 +33,14 @@ import java.util.stream.Collectors;
  */
 public class NameSquasher {
 
+    private SquashFormat squashFormat;
+    private BiMap<String, String> patternMap;
+
+    NameSquasher(SquashFormat format) {
+        squashFormat = format;
+        patternMap = HashBiMap.create();
+    }
+
     /**
      * Javaファイルの中で使用されている変数の名前を短縮し，その結果得られるソースコードをファイルに出力する
      * @param inputFilePath 変数の名前を短縮するJavaファイルのファイルパス
@@ -57,14 +65,13 @@ public class NameSquasher {
         cu = JavaParser.parse(inputFile);
 
         cu.findAll(MethodDeclaration.class).forEach(methodDec -> {
-            SquashPatternManager squashPatternManager = new SquashPatternManager();
             // outputASTRecursively(0, methodDec);
             System.out.println(String.format("%s", methodDec.getName()));
 
             // TODO 注目してるメソッドの引数だけでなく，内部で使用しているラムダ式の引数も一緒に取ってくるため，不整合が無いか検証
             methodDec.findAll(Parameter.class).forEach(param -> {
                 String originalParamName = param.getNameAsString();
-                String squashedName = squashPatternManager.getSquashedName(originalParamName);
+                String squashedName = getSquashedName(originalParamName);
                 param.setName(squashedName);
             });
 
@@ -74,21 +81,20 @@ public class NameSquasher {
                 assert valDeclarators.size() == 1;
                 VariableDeclarator declarator = valDeclarators.get(0);
                 String originalVariableName = declarator.getNameAsString();
-                String squashedName = squashPatternManager.getSquashedName(originalVariableName);
+                String squashedName = getSquashedName(originalVariableName);
 
                 declarator.setName(squashedName);
             });
 
             methodDec.findAll(NameExpr.class).forEach(nameExpr -> {
                 String name = nameExpr.getNameAsString();
-                if (squashPatternManager.hasPatternForName(name)) {
-                    nameExpr.setName(squashPatternManager.getSquashedName(name));
+                if (hasPatternForName(name)) {
+                    nameExpr.setName(getSquashedName(name));
                 }
             });
 
-            System.out.println();
-            System.out.println(methodDec.toString());
-            System.out.println(squashPatternManager.toString());
+            // System.out.println();
+            // System.out.println(methodDec.toString());
         });
 
         try {
@@ -100,6 +106,59 @@ public class NameSquasher {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * ある変数名について，その名前の短縮化を行った後の名前を返します。
+     * 短縮化は、既にある名前を競合しないように一意に定まるものを設定します。
+     * @param originalName 短縮化を行う変数名
+     * @return 短縮化を行った後の名前
+     * TODO Translate in English
+     */
+    String getSquashedName(String originalName) {
+
+        String squashedName = "";
+
+        if (!patternMap.containsKey(originalName)) {
+
+            if (squashFormat == SquashFormat.FIRST_LETTER) {
+
+                int charIndex = 0;
+                do {
+                    charIndex++;
+                    if (charIndex < originalName.length()) {
+                        squashedName = originalName.substring(0, charIndex);
+                    } else {
+                        squashedName = originalName + "_".repeat(charIndex - originalName.length());
+                    }
+                } while (patternMap.containsValue(squashedName));
+
+            } else if (squashFormat == SquashFormat.DOLLAR) {
+
+                int nameIndex = 0;
+                while (patternMap.containsValue("$" + nameIndex)) {
+                    nameIndex++;
+                }
+                squashedName = "$" + nameIndex;
+
+            }
+
+            patternMap.put(originalName, squashedName);
+        } else {
+            squashedName = patternMap.get(originalName);
+        }
+
+        return squashedName;
+    }
+
+    /**
+     * ある変数名について、その名前に対応する短縮化を行った後の名前をこのクラスのオブジェクトが既に保持しているかどうかを返します
+     * @param name 検索する名前
+     * @return 短縮化を行った後の名前を保持していればTrue、保持していなかったらFalse
+     * TODO Translate in English
+     */
+    boolean hasPatternForName(String name) {
+        return patternMap.containsKey(name);
     }
 
     /**
@@ -135,64 +194,6 @@ public class NameSquasher {
         });
 
 
-    }
-
-}
-
-/**
- * 変数の元の名前と短縮化を行った後の名前のマッピングを保持します。
- * TODO Translate in English
- */
-class SquashPatternManager {
-
-    private BiMap<String, String> patternMap;
-
-    SquashPatternManager() {
-        patternMap = HashBiMap.create();
-    }
-
-    /**
-     * ある変数名について，その名前の短縮化を行った後の名前を返します。
-     * 短縮化は、既にある名前を競合しないように一意に定まるものを設定します。
-     * @param originalName 短縮化を行う変数名
-     * @return 短縮化を行った後の名前
-     * TODO Translate in English
-     */
-    String getSquashedName(String originalName) {
-
-        String squashedName;
-
-        if (!patternMap.containsKey(originalName)) {
-            int charIndex = 0;
-            do {
-                charIndex++;
-                if (charIndex < originalName.length()) {
-                    squashedName = originalName.substring(0, charIndex);
-                } else {
-                    squashedName = originalName + "_".repeat(charIndex - originalName.length());
-                }
-            } while (patternMap.containsValue(squashedName));
-            patternMap.put(originalName, squashedName);
-        } else {
-            squashedName = patternMap.get(originalName);
-        }
-
-        return squashedName;
-    }
-
-    /**
-     * ある変数名について、その名前に対応する短縮化を行った後の名前をこのクラスのオブジェクトが既に保持しているかどうかを返します
-     * @param name 検索する名前
-     * @return 短縮化を行った後の名前を保持していればTrue、保持していなかったらFalse
-     * TODO Translate in English
-     */
-    boolean hasPatternForName(String name) {
-        return patternMap.containsKey(name);
-    }
-
-    @Override
-    public String toString() {
-        return patternMap.toString();
     }
 
 }

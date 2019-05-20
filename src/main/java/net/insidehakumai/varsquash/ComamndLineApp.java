@@ -41,7 +41,7 @@ public class ComamndLineApp {
         }
 
         try {
-            new NameSquasher().squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
+            new NameSquasher(SquashFormat.FIRST_LETTER).squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             exit(1);
