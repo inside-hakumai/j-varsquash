@@ -5,9 +5,9 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * Unit test for simple ComamndLineApp.
+ * Unit test for simple CommandLineApp.
  */
-public class ComamndLineAppTest
+public class CommandLineAppTest
 {
     /**
      * Rigorous Test :-)

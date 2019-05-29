@@ -9,7 +9,7 @@ import static java.lang.System.exit;
 /**
  * Entry point class for executing from command line
  */
-public class ComamndLineApp {
+public class CommandLineApp {
 
     public static void main(String[] args) {
 
