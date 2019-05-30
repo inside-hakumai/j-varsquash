@@ -27,7 +27,7 @@ public class NameSquasher {
     private SquashNameApproach squashNameApproach;
     private HashBiMap<String, String> patternMap;
 
-    NameSquasher(SquashFormat format) {
+    public NameSquasher(SquashFormat format) {
         patternMap = HashBiMap.create();
 
         if (format == SquashFormat.FIRST_LETTER) {
