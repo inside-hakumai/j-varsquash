@@ -140,12 +140,12 @@ class MyVisitor extends ASTVisitor {
         String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
 
         String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-        System.out.println(String.format("%3d %-40s --> %-10s %s",
-            accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
-            variableName,
-            squashedName,
-            bindingKey)
-        );
+        // System.out.println(String.format("%3d %-40s --> %-10s %s",
+        //     accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
+        //     variableName,
+        //     squashedName,
+        //     bindingKey)
+        // );
         valDec.setName(valDec.getAST().newSimpleName(squashedName));
 
         valDec.accept(new VariableDeclarationFragmentVisitor(squashNameApproach));
@@ -170,12 +170,12 @@ class MyVisitor extends ASTVisitor {
             String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
 
             String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-            System.out.println(String.format("%3d %-40s --> %-10s %s",
-                accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
-                variableName,
-                squashedName,
-                bindingKey)
-            );
+            // System.out.println(String.format("%3d %-40s --> %-10s %s",
+            //     accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
+            //     variableName,
+            //     squashedName,
+            //     bindingKey)
+            // );
 
             valDecFragment.setName(valDecFragment.getAST().newSimpleName(squashedName));
             return super.visit(valDecFragment);
