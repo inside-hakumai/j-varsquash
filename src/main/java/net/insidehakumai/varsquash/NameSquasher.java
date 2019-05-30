@@ -137,18 +137,20 @@ class MyVisitor extends ASTVisitor {
         // TODO VariableDeclarationFragmentVisitorと内容が重複しているからまとめられるか検討
         SimpleName variableName = valDec.getName();
 
-        String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
+        if (variableName.resolveBinding() != null) {
+            String bindingKey = variableName.resolveBinding().getKey();
 
-        String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-        // System.out.println(String.format("%3d %-40s --> %-10s %s",
-        //     accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
-        //     variableName,
-        //     squashedName,
-        //     bindingKey)
-        // );
-        valDec.setName(valDec.getAST().newSimpleName(squashedName));
+            String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
+            // System.out.println(String.format("%3d %-40s --> %-10s %s",
+            //     accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
+            //     variableName,
+            //     squashedName,
+            //     bindingKey)
+            // );
+            valDec.setName(valDec.getAST().newSimpleName(squashedName));
 
-        valDec.accept(new VariableDeclarationFragmentVisitor(squashNameApproach));
+            valDec.accept(new VariableDeclarationFragmentVisitor(squashNameApproach));
+        }
         return super.visit(valDec);
     }
 
@@ -167,17 +169,19 @@ class MyVisitor extends ASTVisitor {
 
             SimpleName variableName = valDecFragment.getName();
 
-            String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
+            if (variableName.resolveBinding() != null) {
+                String bindingKey = variableName.resolveBinding().getKey();
 
-            String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-            // System.out.println(String.format("%3d %-40s --> %-10s %s",
-            //     accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
-            //     variableName,
-            //     squashedName,
-            //     bindingKey)
-            // );
+                String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
+                // System.out.println(String.format("%3d %-40s --> %-10s %s",
+                //     accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
+                //     variableName,
+                //     squashedName,
+                //     bindingKey)
+                // );
 
-            valDecFragment.setName(valDecFragment.getAST().newSimpleName(squashedName));
+                valDecFragment.setName(valDecFragment.getAST().newSimpleName(squashedName));
+            }
             return super.visit(valDecFragment);
         }
 
