@@ -1,28 +1,17 @@
 package net.insidehakumai.varsquash;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
-import com.github.javaparser.symbolsolver.JavaSymbolSolver;
-import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import org.apache.commons.cli.*;
-import org.apache.commons.io.FilenameUtils;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.dom.*;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -48,64 +37,94 @@ public class NameSquasher {
      * @throws FileNotFoundException 入力するJavaファイルが存在しなかった場合
      * TODO Translate in English
      */
-    public void squashNamesInFile(String inputFilePath, String outputFilePath) throws FileNotFoundException {
+    public void squashNamesInFile(String inputFilePath, String outputFilePath) throws IOException {
 
-        File inputFile = new File(inputFilePath);
-        CompilationUnit cu;
+        ASTParser parser = ASTParser.newParser(AST.JLS11);
+        Map<String, String> options = JavaCore.getOptions();
+        JavaCore.setComplianceOptions(JavaCore.VERSION_11, options);
+        parser.setCompilerOptions(options);
+        parser.setKind(ASTParser.K_COMPILATION_UNIT);
+        parser.setResolveBindings(true);
+        parser.setBindingsRecovery(true);
+        parser.setSource(readAll(inputFilePath).toCharArray());
+        parser.setEnvironment(new String[] {}, new String[] {}, null, true);
 
-        TypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
-        reflectionTypeSolver.setParent(reflectionTypeSolver);
+        parser.createASTs(
+            new String[]{inputFilePath},
+            null,
+            new String[] {},
+            new FileASTRequestor() {
+                @Override
+                public void acceptAST(String sourceFilePath, CompilationUnit cu) {
 
-        CombinedTypeSolver combinedSolver = new CombinedTypeSolver();
-        combinedSolver.add(reflectionTypeSolver);
+                    for (Object typeDec : cu.types()) {
+                        ((TypeDeclaration) typeDec).accept(new MyVisitor(cu));
+                    }
 
-        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedSolver);
-        JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
-
-        cu = JavaParser.parse(inputFile);
-
-        cu.findAll(MethodDeclaration.class).forEach(methodDec -> {
-            // outputASTRecursively(0, methodDec);
-            System.out.println(String.format("%s", methodDec.getName()));
-
-            // TODO 注目してるメソッドの引数だけでなく，内部で使用しているラムダ式の引数も一緒に取ってくるため，不整合が無いか検証
-            methodDec.findAll(Parameter.class).forEach(param -> {
-                String originalParamName = param.getNameAsString();
-                String squashedName = getSquashedName(originalParamName);
-                param.setName(squashedName);
-            });
-
-            methodDec.findAll(VariableDeclarationExpr.class).forEach(variable -> {
-                // System.out.println(String.format("  %s", variable.toString()));
-                List<VariableDeclarator> valDeclarators = getChildNodesByType(variable, VariableDeclarator.class);
-                assert valDeclarators.size() == 1;
-                VariableDeclarator declarator = valDeclarators.get(0);
-                String originalVariableName = declarator.getNameAsString();
-                String squashedName = getSquashedName(originalVariableName);
-
-                declarator.setName(squashedName);
-            });
-
-            methodDec.findAll(NameExpr.class).forEach(nameExpr -> {
-                String name = nameExpr.getNameAsString();
-                if (hasPatternForName(name)) {
-                    nameExpr.setName(getSquashedName(name));
+                    super.acceptAST(sourceFilePath, cu);
                 }
-            });
+            },
+            new NullProgressMonitor()
+        );
 
-            // System.out.println();
-            // System.out.println(methodDec.toString());
-        });
+//        CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
 
-        try {
-            // TODO Ensure directory existence
-            File file = new File(outputFilePath);
-            FileWriter fileWriter = new FileWriter(file);
-            fileWriter.write(cu.toString());
-            fileWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        for (Object typeDec : cu.types()) {
+//            ((TypeDeclaration) typeDec).accept(new MyVisitor(cu));
+//
+//
+////            for (FieldDeclaration fieldDec : ((TypeDeclaration) typeDec).getFields()) {
+////                RefactoringDescriptor renameJavaElementDescriptor = renameFieldRefactoringContribution.createDescriptor();
+////                 RenameFieldProcessor renameProcessor = new RenameFieldProcessor(fieldDec.);
+////                 System.out.println(fieldDec);
+////            }
+//        }
+
+
+
+
+//        cu.findfindAll(MethodDeclaration.class).forEach(methodDec -> {
+//            // outputASTRecursively(0, methodDec);
+//            System.out.println(String.format("%s", methodDec.getName()));
+//
+//            // TODO 注目してるメソッドの引数だけでなく，内部で使用しているラムダ式の引数も一緒に取ってくるため，不整合が無いか検証
+//            methodDec.findAll(Parameter.class).forEach(param -> {
+//                String originalParamName = param.getNameAsString();
+//                String squashedName = getSquashedName(originalParamName);
+//                param.setName(squashedName);
+//            });
+//
+//            methodDec.findAll(VariableDeclarationExpr.class).forEach(variable -> {
+//                // System.out.println(String.format("  %s", variable.toString()));
+//                List<VariableDeclarator> valDeclarators = getChildNodesByType(variable, VariableDeclarator.class);
+//                assert valDeclarators.size() == 1;
+//                VariableDeclarator declarator = valDeclarators.get(0);
+//                String originalVariableName = declarator.getNameAsString();
+//                String squashedName = getSquashedName(originalVariableName);
+//
+//                declarator.setName(squashedName);
+//            });
+//
+//            methodDec.findAll(NameExpr.class).forEach(nameExpr -> {
+//                String name = nameExpr.getNameAsString();
+//                if (hasPatternForName(name)) {
+//                    nameExpr.setName(getSquashedName(name));
+//                }
+//            });
+//
+//            // System.out.println();
+//            // System.out.println(methodDec.toString());
+//        });
+
+//        try {
+//            // TODO Ensure directory existence
+//            File file = new File(outputFilePath);
+//            FileWriter fileWriter = new FileWriter(file);
+//            fileWriter.write(cu.toString());
+//            fileWriter.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     /**
@@ -161,38 +180,105 @@ public class NameSquasher {
         return patternMap.containsKey(name);
     }
 
-    /**
-     * ソースコードのAST上のあるノードの子ノードの中で，特定の種類のものを抽出します．
-     * @param node 子ノードを検索するノード。つまり，このメソッドが返すノード集合の親ノードとなるもの
-     * @param clazz 抽出するノードの種類を示すクラス
-     * @param <N> com.github.javaparser.ast.Node を継承しているクラス
-     * @return 抽出したノードのリスト。何も見つからなかった場合は空のリストを返す
-     * TODO Translate in English
-     */
-    private static <N extends Node> List<N> getChildNodesByType(Node node, Class<N> clazz) {
-        List<N> returnNodes = node.getChildNodes().stream()
-            .filter(targetChild -> targetChild.getClass() == clazz)
-            .map(n -> (N) n) // TODO unchecked警告を外す安全な方法が無いか調査
-            .collect(Collectors.toList());
+//    /**
+//     * ソースコードのAST上のあるノードの子ノードの中で，特定の種類のものを抽出します．
+//     * @param node 子ノードを検索するノード。つまり，このメソッドが返すノード集合の親ノードとなるもの
+//     * @param clazz 抽出するノードの種類を示すクラス
+//     * @param <N> com.github.javaparser.ast.Node を継承しているクラス
+//     * @return 抽出したノードのリスト。何も見つからなかった場合は空のリストを返す
+//     * TODO Translate in English
+//     */
+//    private static <N extends Node> List<N> getChildNodesByType(Node node, Class<N> clazz) {
+//        List<N> returnNodes = node.getChildNodes().stream()
+//            .filter(targetChild -> targetChild.getClass() == clazz)
+//            .map(n -> (N) n) // TODO unchecked警告を外す安全な方法が無いか調査
+//            .collect(Collectors.toList());
+//
+//        return returnNodes;
+//    }
+//
+//    private static void outputASTRecursively(int depth, Node node) {
+//        for (int i = 0; i < depth; i++) {
+//            System.out.print("  ");
+//        }
+//
+//        if (node.toString().length() > 50) {
+//            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "").substring(0, 50)));
+//        } else {
+//            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "")));
+//        }
+//
+//        node.getChildNodes().forEach(child -> {
+//            outputASTRecursively(depth + 1, child);
+//        });
+//
+//
+//    }
 
-        return returnNodes;
+    public static String readAll(final String path) throws IOException {
+        return Files.lines(Paths.get(path), Charset.forName("UTF-8"))
+            .collect(Collectors.joining(System.getProperty("line.separator")));
     }
 
-    private static void outputASTRecursively(int depth, Node node) {
-        for (int i = 0; i < depth; i++) {
-            System.out.print("  ");
+}
+
+class MyVisitor extends ASTVisitor {
+
+    private CompilationUnit accepteeCompilationUnit;
+
+    MyVisitor(CompilationUnit accepteeCompilationUnit) {
+        super();
+        this.accepteeCompilationUnit = accepteeCompilationUnit;
+    }
+
+    @Override
+    public boolean visit(FieldDeclaration fieldDec) {
+        fieldDec.accept(new VariableDeclarationFragmentVisitor());
+        return super.visit(fieldDec);
+    }
+
+    @Override
+    public boolean visit(VariableDeclarationStatement valDecStmt) {
+        valDecStmt.accept(new VariableDeclarationFragmentVisitor());
+        return super.visit(valDecStmt);
+    }
+
+    @Override
+    public boolean visit(SingleVariableDeclaration valDec) {
+
+        // TODO VariableDeclarationFragmentVisitorと内容が重複しているからまとめられるか検討
+        SimpleName variableName = valDec.getName();
+
+        String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
+
+        System.out.println(String.format("%3d %-50s %s",
+            accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
+            variableName,
+            bindingKey)
+        );
+
+        valDec.accept(new VariableDeclarationFragmentVisitor());
+        return super.visit(valDec);
+    }
+
+
+    private class VariableDeclarationFragmentVisitor extends ASTVisitor {
+
+        @Override
+        public boolean visit(VariableDeclarationFragment valDecFragment) {
+
+            SimpleName variableName = valDecFragment.getName();
+
+            String bindingKey = variableName.resolveBinding() != null ? variableName.resolveBinding().getKey() : "[UNRESOLVED]";
+
+            System.out.println(String.format("%3d %-50s %s",
+                accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
+                variableName,
+                bindingKey)
+            );
+
+            return super.visit(valDecFragment);
         }
-
-        if (node.toString().length() > 50) {
-            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "").substring(0, 50)));
-        } else {
-            System.out.println(String.format("%s, %s", node.getClass(), node.toString().replace("\n", "").replace("\r", "")));
-        }
-
-        node.getChildNodes().forEach(child -> {
-            outputASTRecursively(depth + 1, child);
-        });
-
 
     }
 

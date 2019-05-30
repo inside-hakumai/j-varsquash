@@ -3,6 +3,7 @@ package net.insidehakumai.varsquash;
 import org.apache.commons.cli.*;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import static java.lang.System.exit;
 
@@ -42,7 +43,7 @@ public class CommandLineApp {
 
         try {
             new NameSquasher(SquashFormat.FIRST_LETTER).squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             exit(1);
         }
