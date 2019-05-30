@@ -3,11 +3,12 @@
   <groupId>net.insidehakumai.varsquash</groupId>
   <artifactId>varsquash</artifactId>
   <versioning>
-    <release>0.0.5</release>
+    <release>0.0.6</release>
     <versions>
       <version>0.0.4</version>
       <version>0.0.5</version>
+      <version>0.0.6</version>
     </versions>
-    <lastUpdated>20190530143648</lastUpdated>
+    <lastUpdated>20190530153032</lastUpdated>
   </versioning>
 </metadata>
