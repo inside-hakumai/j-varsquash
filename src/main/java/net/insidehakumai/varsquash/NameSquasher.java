@@ -65,22 +65,30 @@ public class NameSquasher {
                 public void acceptAST(String sourceFilePath, CompilationUnit cu) {
 
                     for (Object typeDec : cu.types()) {
-                        ((TypeDeclaration) typeDec).accept(new MyVisitor(cu, squashNameApproach));
+                        try {
+                            ((TypeDeclaration) typeDec).accept(new MyVisitor(cu, squashNameApproach));
+                        } catch(ClassCastException e) {
+                            // do nothing
+                        }
                     }
 
                     for (Object typeDec : cu.types()) {
-                        ((TypeDeclaration) typeDec).accept(new ASTVisitor() {
-                            @Override
-                            public boolean visit(SimpleName node) {
-                                if (node.resolveBinding() != null) {
-                                    String squashedName = patternMap.get(node.resolveBinding().getKey());
-                                    if (squashedName != null) {
-                                        node.setIdentifier(squashedName);
+                        try {
+                            ((TypeDeclaration) typeDec).accept(new ASTVisitor() {
+                                @Override
+                                public boolean visit(SimpleName node) {
+                                    if (node.resolveBinding() != null) {
+                                        String squashedName = patternMap.get(node.resolveBinding().getKey());
+                                        if (squashedName != null) {
+                                            node.setIdentifier(squashedName);
+                                        }
                                     }
+                                    return super.visit(node);
                                 }
-                                return super.visit(node);
-                            }
-                        });
+                            });
+                        } catch (ClassCastException e) {
+                            // do nothing
+                        }
                     }
 
                     super.acceptAST(sourceFilePath, cu);
