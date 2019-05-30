@@ -149,12 +149,12 @@ class MyVisitor extends ASTVisitor {
             String bindingKey = variableName.resolveBinding().getKey();
 
             String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-            // System.out.println(String.format("%3d %-40s --> %-10s %s",
-            //     accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
-            //     variableName,
-            //     squashedName,
-            //     bindingKey)
-            // );
+             System.out.println(String.format("%3d %-40s --> %-10s %s",
+                 accepteeCompilationUnit.getLineNumber(valDec.getStartPosition()),
+                 variableName,
+                 squashedName,
+                 bindingKey)
+             );
             valDec.setName(valDec.getAST().newSimpleName(squashedName));
 
             valDec.accept(new VariableDeclarationFragmentVisitor(squashNameApproach));
@@ -181,12 +181,12 @@ class MyVisitor extends ASTVisitor {
                 String bindingKey = variableName.resolveBinding().getKey();
 
                 String squashedName = squashNameApproach.squashName(bindingKey, variableName.toString());
-                // System.out.println(String.format("%3d %-40s --> %-10s %s",
-                //     accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
-                //     variableName,
-                //     squashedName,
-                //     bindingKey)
-                // );
+                 System.out.println(String.format("%3d %-40s --> %-10s %s",
+                     accepteeCompilationUnit.getLineNumber(valDecFragment.getStartPosition()),
+                     variableName,
+                     squashedName,
+                     bindingKey)
+                 );
 
                 valDecFragment.setName(valDecFragment.getAST().newSimpleName(squashedName));
             }
@@ -219,7 +219,8 @@ class SquashNameByFirstLetter extends SquashNameApproach {
     String squashName(String key, String originalName) {
 
         if (patternMap.containsKey(key)) {
-            throw new KeyAlreadyExistsException(String.format("Squash pattern for %s is already exists (%s)", key, patternMap.get(key)));
+            // throw new KeyAlreadyExistsException(String.format("Squash pattern for %s is already exists (%s)", key, patternMap.get(key)));
+            return patternMap.get(key);
         }
 
         String squashedName;
@@ -251,7 +252,8 @@ class SquashNameByDollar extends SquashNameApproach {
     String squashName(String key, String originalName) {
 
         if (patternMap.containsKey(key)) {
-            throw new KeyAlreadyExistsException(String.format("Squash pattern for %s is already exists (%s)", key, patternMap.get(key)));
+            // throw new KeyAlreadyExistsException(String.format("Squash pattern for %s is already exists (%s)", key, patternMap.get(key)));
+            return patternMap.get(key);
         }
 
         String squashedName;
