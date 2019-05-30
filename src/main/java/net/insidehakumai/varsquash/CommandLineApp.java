@@ -3,6 +3,7 @@ package net.insidehakumai.varsquash;
 import org.apache.commons.cli.*;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import static java.lang.System.exit;
 
@@ -26,6 +27,10 @@ public class CommandLineApp {
         outputDirOpt.setRequired(true);
         options.addOption(outputDirOpt);
 
+        Option squashTypeOpt = new Option("t", "squashType", true, "squash type");
+        squashTypeOpt.setRequired(true);
+        options.addOption(squashTypeOpt);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd;
@@ -41,8 +46,15 @@ public class CommandLineApp {
         }
 
         try {
-            new NameSquasher(SquashFormat.FIRST_LETTER).squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
-        } catch (FileNotFoundException e) {
+            SquashFormat squashFormat;
+            if (cmd.getOptionValue("squashType").equals("firstLetter")) {
+                new NameSquasher(SquashFormat.FIRST_LETTER).squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
+            } else if(cmd.getOptionValue("squashType").equals("dollar")) {
+                new NameSquasher(SquashFormat.DOLLAR).squashNamesInFile(cmd.getOptionValue("infile"), cmd.getOptionValue("outfile"));
+            } else {
+                throw new Error("Invalid value: " + cmd.getOptionValue("squashType"));
+            }
+        } catch (IOException e) {
             e.printStackTrace();
             exit(1);
         }
